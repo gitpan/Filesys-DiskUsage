@@ -7,7 +7,7 @@ use File::Basename;
 
 =head1 NAME
 
-Filesys::DiskUsage - Estimate file space usage
+Filesys::DiskUsage - Estimate file space usage (similar to `du`)
 
 =cut
 
@@ -26,7 +26,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -43,7 +43,7 @@ or
 or
 
   # max-depth is 1
-  $total = du( { max-depth => 1 } , <*> );
+  $total = du( { 'max-depth' => 1 } , <*> );
 
 or
 
@@ -53,7 +53,7 @@ or
 or
 
   # get a hash
-  %sizes = du( { make-hash => 1 }, @files_and_directories );
+  %sizes = du( { 'make-hash' => 1 }, @files_and_directories );
 
 =head1 FUNCTIONS
 
@@ -127,7 +127,7 @@ Get the size of every file in the directory, but not directories:
 
   $total = du( { recursive => 0 } , <*> );
 
-=item truncate-readable
+=item truncate-readable => NUMBER
 
 Human readable formats decimal places are truncated by the value of
 this option. A negative number means the result won't be truncated at
@@ -161,10 +161,15 @@ sub du {
 
   # calculate sizes
   for (@_) {
-    if (-l && $config{dereference}) { # is a symbolic link
-      $sizes{$_} = du( { 'recursive' => $config{'recursive'},
-                         'exclude'   => $config{'exclude'},
-                       }, readlink($_));
+    if (-l) { # is symbolic link
+      if ($config{'dereference'}) { # we want to follow it
+        $sizes{$_} = du( { 'recursive' => $config{'recursive'},
+                           'exclude'   => $config{'exclude'},
+                         }, readlink($_));
+      }
+      else {
+        next;
+      }
     }
     elsif (-f) { # is a file
       if (defined $config{exclude}) {

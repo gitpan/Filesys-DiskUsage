@@ -1,9 +1,9 @@
-Filesys::DiskUsage version 0.01
+Filesys::DiskUsage version 0.02
 ===============================
 
 =head1 NAME
 
-Filesys::DiskUsage - Estimate file space usage
+Filesys::DiskUsage - Estimate file space usage (similar to `du`)
 
 =head1 SYNOPSIS
 
@@ -20,7 +20,7 @@ or
 or
 
   # max-depth is 1
-  $total = du( { max-depth => 1 } , <*> );
+  $total = du( { 'max-depth' => 1 } , <*> );
 
 or
 
@@ -30,7 +30,7 @@ or
 or
 
   # get a hash
-  %sizes = du( { make-hash => 1 }, @files_and_directories );
+  %sizes = du( { 'make-hash' => 1 }, @files_and_directories );
 
 =head1 FUNCTIONS
 
@@ -104,7 +104,7 @@ Get the size of every file in the directory, but not directories:
 
   $total = du( { recursive => 0 } , <*> );
 
-=item truncate-readable
+=item truncate-readable => NUMBER
 
 Human readable formats decimal places are truncated by the value of
 this option. A negative number means the result won't be truncated at
