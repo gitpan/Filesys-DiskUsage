@@ -26,7 +26,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -161,6 +161,10 @@ sub du {
 
   # calculate sizes
   for (@_) {
+    if (defined $config{exclude} and -f || -d) {
+      my $filename = basename($_);
+      next if $filename =~ /$config{exclude}/;
+    }
     if (-l) { # is symbolic link
       if ($config{'dereference'}) { # we want to follow it
         $sizes{$_} = du( { 'recursive' => $config{'recursive'},
@@ -172,10 +176,6 @@ sub du {
       }
     }
     elsif (-f) { # is a file
-      if (defined $config{exclude}) {
-        my $filename = basename($_);
-        next if $filename =~ /$config{exclude}/;
-      }
       $sizes{$_} = -s;
     }
     elsif (-d) { # is a directory

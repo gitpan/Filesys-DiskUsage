@@ -1,0 +1,101 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use 5.006;
+
+=head1 NAME
+
+fdu - Estimate file space usage (using Filesys::DiskUsage)
+
+=head1 SYNOPSIS
+
+  fdu [OPTION]... [FILE]...
+
+=head1 DESCRIPTION
+
+Summarize disk usage of each FILE, recursively for directories.
+
+=head1 OPTIONS
+
+=head2 -L
+
+Dereference all symbolic links.
+
+=head2 -X=PATTERN
+
+Exclude files that match PATTERN.
+
+=head2 -h
+
+Print sizes in human readable format (e.g., 1K 234M 2G).
+
+=head2 -H
+
+Likewise, but use powers of 1000 not 1024.
+
+=head2 -m=MAX-DEPTH
+
+Print the total for a directory (or file) only if it is N or fewer
+levels below the command line argument.
+
+=head2 -t=N
+
+If printing sizes in human readable format, truncate all values by the
+Nth place.
+
+Truncate 
+
+=cut
+
+use Getopt::Std qw(getopts);
+
+our %opts    = get_options();
+
+show_help()             if $opts{h};
+show_version()          if $opts{v};
+
+# subroutines
+
+sub get_options {
+  my %opts;
+  getopts('hHLm:t:vX:', \%opts );
+
+  foreach my $key ( keys %opts )
+    {
+      $opts{$key} = 1 unless defined $opts{$key}
+    }
+
+  %opts;
+}
+
+###
+
+sub show_help {
+  die "Usage: fdu file1 file2
+ or:   fdu -a -p file
+fdu: estimate file space usage (using Filesys::DiskUsage)
+
+Options:
+  -h         displays this messages and exit
+  -v         show version and exit
+"
+}
+
+###
+
+sub show_version {
+  die"fdu version 0.01 (Filesys::DiskUsage", Filesys::DiskUsage->VERSION, ")\n";
+}
+
+=head1 AUTHOR
+
+Jose Alves de Castro, E<lt>cog@cpan.orgE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2004 by Jose Alves de Castro
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
+
+=cut
