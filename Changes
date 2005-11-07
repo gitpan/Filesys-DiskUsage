@@ -1,5 +1,9 @@
 Revision history for Filesys::DiskUsage
 
+0.04  Mon Nov 05 10:31:00 2005
+        - added sector-size and symlink-size patch, thanks to Darin McBride
+	- fixed a couple of things on fdu
+
 0.03  Mon Oct 24 17:21:00 2005
 	- added the fdu command
 	- directory excluding now works (thanks to Hussein Patni for pointing

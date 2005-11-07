@@ -26,7 +26,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -75,7 +75,7 @@ Get the size of directories:
 
 =item dereference
 
-Follow symbolic links. Default is 0.
+Follow symbolic links. Default is 0. Overrides C<symlink-size>.
 
 Get the size of a directory, recursively, following symbolic links:
 
@@ -127,6 +127,26 @@ Get the size of every file in the directory, but not directories:
 
   $total = du( { recursive => 0 } , <*> );
 
+=item sector-size => NUMBER
+
+All file sizes are rounded up to a multiple of this number.  Any file
+that is not an exact multiple of this size will be treated as the next
+multiple of this number as they would in a sector-based file system.  Common
+values will be 512 or 1024.  Default is 1 (no sectors).
+
+  $total = du( { sector-size => 1024 }, <*> );
+
+=item symlink-size => NUMBER
+
+Symlinks are assumed to be this size.  Without this option, symlinks are
+ignored unless dereferenced.  Setting this option to 0 will result in the
+files showing up in the hash, if C<make-hash> is set, with a size of 0.
+Setting this option to any other number will treat the size of the symlink
+as this number.  This option is ignored if the C<dereference> option is
+set.
+
+  $total = du( { symlink-size => 1024, sector-size => 1024 }, <*> );
+
 =item truncate-readable => NUMBER
 
 Human readable formats decimal places are truncated by the value of
@@ -152,6 +172,8 @@ sub du {
     'make-hash'         => 0,
     'max-depth'         => -1,
     'recursive'         => 1,
+    'sector-size'       => 1,
+    'symlink-size'      => undef,
     'truncate-readable' => 2,
   );
   if (ref($_[0]) eq 'HASH') {%config = (%config, %{+shift})}
@@ -167,25 +189,28 @@ sub du {
     }
     if (-l) { # is symbolic link
       if ($config{'dereference'}) { # we want to follow it
-        $sizes{$_} = du( { 'recursive' => $config{'recursive'},
-                           'exclude'   => $config{'exclude'},
+        $sizes{$_} = du( { 'recursive'   => $config{'recursive'},
+                           'exclude'     => $config{'exclude'},
+                           'sector-size' => $config{'sector-size'},
                          }, readlink($_));
       }
       else {
+        $sizes{$_} = $config{'symlink-size'} if defined $config{'symlink-size'};
         next;
       }
     }
     elsif (-f) { # is a file
-      $sizes{$_} = -s;
+      $sizes{$_}  = $config{'sector-size'} - 1 + -s;
+      $sizes{$_} -= $sizes{$_} % $config{'sector-size'};
     }
     elsif (-d) { # is a directory
-      $sizes{$_} = -s;
       if ($config{recursive} && $config{'max-depth'}) {
         opendir(DIR,$_);
         my $dir = $_;
-        $sizes{$_} += du( { 'recursive' => $config{'recursive'},
-                            'max-depth' => $config{'max-depth'} -1,
-                            'exclude'   => $config{'exclude'},
+        $sizes{$_} += du( { 'recursive'   => $config{'recursive'},
+                            'max-depth'   => $config{'max-depth'} -1,
+                            'exclude'     => $config{'exclude'},
+                            'sector-size' => $config{'sector-size'},
                           }, map {"$dir/$_"} grep {! /^\.\.?$/} readdir DIR );
       }
     }

@@ -21,7 +21,7 @@ Summarize disk usage of each FILE, recursively for directories.
 
 Dereference all symbolic links.
 
-=head2 -X=PATTERN
+=head2 -X PATTERN
 
 Exclude files that match PATTERN.
 
@@ -33,12 +33,28 @@ Print sizes in human readable format (e.g., 1K 234M 2G).
 
 Likewise, but use powers of 1000 not 1024.
 
-=head2 -m=MAX-DEPTH
+=head2 -s N
+
+Assume sector size of N.
+
+=head2 -l N
+
+Assume link size of N (ignored if -L).
+
+=head2 -s N
+
+Assume sector size of N.
+
+=head2 -l N
+
+Assume link size of N (ignored if -L).
+
+=head2 -m MAX-DEPTH
 
 Print the total for a directory (or file) only if it is N or fewer
 levels below the command line argument.
 
-=head2 -t=N
+=head2 -t N
 
 If printing sizes in human readable format, truncate all values by the
 Nth place.
@@ -48,43 +64,74 @@ Truncate
 =cut
 
 use Getopt::Std qw(getopts);
+use lib 'blib/lib';
+use Filesys::DiskUsage qw/ du /;
 
 our %opts    = get_options();
 
-show_help()             if $opts{h};
+#show_help()             if $opts{ };
 show_version()          if $opts{v};
+
+my %files = du( { 'make-hash' => 1, %opts }, @ARGV );
+my $human = $opts{'human-readable'} || $opts{'Human-readable'};
+
+my $total = 0;
+for (sort keys %files)
+{
+    print "$_ => $files{$_}\n";
+    $total += $files{$_} unless $human;
+}
+print "\nTotal: $total\n" unless $human;
 
 # subroutines
 
 sub get_options {
   my %opts;
-  getopts('hHLm:t:vX:', \%opts );
+  my %opts_to_du = (
+                    L   => 'dereference',
+                    X   => 'exclude',
+                    h   => 'human-readable',
+                    H   => 'Human-readable',
+                    'm' => 'max-depth',
+                    's' => 'sector-size',
+                    l   => 'symlink-size',
+                    t   => 'truncate-readable',
+                   );
 
-  foreach my $key ( keys %opts )
-    {
-      $opts{$key} = 1 unless defined $opts{$key}
-    }
+  getopts('hHLm:t:vX:s:l:', \%opts );
 
-  %opts;
+  for my $key ( keys %opts ) {
+    $opts{$key} = 1 unless defined $opts{$key}
+  }
+
+  map { $opts_to_du{$_} => $opts{$_} } keys %opts;
 }
 
 ###
 
-sub show_help {
+sub show_help { # unfortunately, this is never used, for now
   die "Usage: fdu file1 file2
- or:   fdu -a -p file
 fdu: estimate file space usage (using Filesys::DiskUsage)
 
 Options:
-  -h         displays this messages and exit
-  -v         show version and exit
+  -           displays this messages and exit
+  -v          show version and exit
+
+  -L          dereference
+  -X PATTERN  pattern to exclude
+  -h          human-readable format
+  -H          human-readable format with powers of 1000
+  -m MAXDEPTH max-depth
+  -s SIZE     sector-size
+  -l SYMSIZE  symlink-size
+  -t TRUNCATE truncate-readable
 "
 }
 
 ###
 
 sub show_version {
-  die"fdu version 0.01 (Filesys::DiskUsage", Filesys::DiskUsage->VERSION, ")\n";
+  die"fdu version 0.02 (Filesys::DiskUsage ", Filesys::DiskUsage->VERSION, ")\n";
 }
 
 =head1 AUTHOR
