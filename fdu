@@ -3,6 +3,8 @@ use warnings;
 use strict;
 use 5.006;
 
+our $VERSION = '0.04';
+
 =head1 NAME
 
 fdu - Estimate file space usage (using Filesys::DiskUsage)
@@ -131,7 +133,7 @@ Options:
 ###
 
 sub show_version {
-  die"fdu version 0.02 (Filesys::DiskUsage ", Filesys::DiskUsage->VERSION, ")\n";
+  die"fdu version $VERSION\n";
 }
 
 =head1 AUTHOR

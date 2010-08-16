@@ -26,7 +26,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -136,6 +136,14 @@ values will be 512 or 1024.  Default is 1 (no sectors).
 
   $total = du( { sector-size => 1024 }, <*> );
 
+=item show-warnings => 1 | 0
+
+Shows warnings when trying to open a directory that isn't readable.
+
+  $total = du( { 'show-warnings' => 0 }, <*> );
+
+1 by default.
+
 =item symlink-size => NUMBER
 
 Symlinks are assumed to be this size.  Without this option, symlinks are
@@ -173,6 +181,7 @@ sub du {
     'max-depth'         => -1,
     'recursive'         => 1,
     'sector-size'       => 1,
+    'show-warnings'     => 1,
     'symlink-size'      => undef,
     'truncate-readable' => 2,
   );
@@ -205,13 +214,24 @@ sub du {
     }
     elsif (-d) { # is a directory
       if ($config{recursive} && $config{'max-depth'}) {
-        opendir(DIR,$_);
-        my $dir = $_;
-        $sizes{$_} += du( { 'recursive'   => $config{'recursive'},
-                            'max-depth'   => $config{'max-depth'} -1,
-                            'exclude'     => $config{'exclude'},
-                            'sector-size' => $config{'sector-size'},
-                          }, map {"$dir/$_"} grep {! /^\.\.?$/} readdir DIR );
+
+        if (opendir(DIR, $_)) {
+          my $dir = $_;
+          my @files = readdir DIR;
+          closedir(DIR);
+
+          $sizes{$_} += du( { 'recursive'     => $config{'recursive'},
+                              'max-depth'     => $config{'max-depth'} -1,
+                              'exclude'       => $config{'exclude'},
+                              'sector-size'   => $config{'sector-size'},
+                              'show-warnings' => $config{'show-warnings'},
+                            }, map {"$dir/$_"} grep {! /^\.\.?$/} @files);
+        }
+        elsif ( $config{'show-warnings'} ) {
+            # if the user requests to be notified of non openable directories, notify the user
+            warn "could not open $_ ($!)\n";
+        }
+
       }
     }
   }
@@ -259,13 +279,6 @@ sub _convert {
 =head1 AUTHOR
 
 Jose Castro, C<< <cog@cpan.org> >>
-
-=head1 BUGS
-
-Please report any bugs or feature requests to
-C<bug-disk-usage@rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
 
 =head1 COPYRIGHT & LICENSE
 
