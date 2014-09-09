@@ -61,8 +61,6 @@ levels below the command line argument.
 If printing sizes in human readable format, truncate all values by the
 Nth place.
 
-Truncate 
-
 =cut
 
 use Getopt::Std qw(getopts);
