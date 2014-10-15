@@ -25,4 +25,4 @@ requires:
   Test::Warn: '0'
 resources:
   repository: http://github.com/szabgab/Filesys-DiskUsage.git
-version: '0.07'
+version: '0.08'
